@@ -130,7 +130,7 @@ body {
 	max-width: 70%;
 }
 
-.messages__item--oprator {
+.messages__item--operator {
 	margin-left: auto;
 	border-top-left-radius: 20px;
 	border-top-right-radius: 20px;
@@ -139,7 +139,7 @@ body {
 	color: white;
 }
 
-.messages__item--visitor {
+.messages__item--mine {
 	margin-right: auto;
 	border-top-left-radius: 20px;
 	border-top-right-radius: 20px;

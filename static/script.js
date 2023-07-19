@@ -1,125 +1,107 @@
-class DioArafi {
-  constructor() {
-    this.args = {
-      openButton: document.querySelector('.chatbox__button'),
-      dio: document.querySelector('.chatbox__wrapper'),
-      sendButton: document.querySelector('.send__button'),
-    };
+const openButton = document.querySelector('.chatbox__button');
+const dio = document.querySelector('.chatbox__wrapper');
+const sendButton = document.querySelector('.send__button');
 
-    this.state = false;
-    this.messages = [];
+let state = false;
+let messages = [];
+
+const toggleState = () => {
+  state = !state;
+
+  if (state) {
+    dio.classList.add('chatbox--active');
+  } else {
+    dio.classList.remove('chatbox--active');
+  }
+};
+
+const onSendButton = () => {
+  const textField = dio.querySelector('input');
+  const text = textField.value.trim();
+  
+  if (!text) {
+    return;
   }
 
-  display() {
-    const { openButton, dio, sendButton } = this.args;
+  const msg = { name: 'User', message: text };
+  messages.push(msg);
+  updateChatText();
+  textField.value = '';
 
-    openButton.addEventListener('click', () => this.toggleState(dio));
+  showLoader();
 
-    sendButton.addEventListener('click', () => this.onSendButton(dio));
+  fetch('/chat', {
+    method: 'POST',
+    body: JSON.stringify({ message: text }),
+    mode: 'cors',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+  })
+    .then(r => r.json())
+    .then(({ message }) => {
+      const msg = { name: "dio", message };
+      messages.push(msg);
+      updateChatText();
+      removeLoader();
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+      updateChatText();
+      removeLoader();
+    });
+};
 
-    const node = dio.querySelector('input');
-    node.addEventListener('keyup', ({ key }) => {
-      if (key === 'Enter') {
-        this.onSendButton(dio);
+const updateChatText = () => {
+  let html = '';
+  messages
+    .slice()
+    .reverse()
+    .forEach(function (item, index) {
+      if (item.name === 'dio') {
+        html +=
+          '<div class="messages__item messages__item--mine">' +
+          item.message +
+          '</div>';
+      } else {
+        html +=
+          '<div class="messages__item messages__item--operator">' +
+          item.message +
+          '</div>';
       }
     });
-  }
 
-  toggleState(dio) {
-    this.state = !this.state;
+  const messagesElement = dio.querySelector('.chatbox__messages');
+  messagesElement.innerHTML = html;
+};
 
-    if (this.state) {
-      dio.classList.add('chatbox--active');
-    } else {
-      dio.classList.remove('chatbox--active');
-    }
-  }
+function showLoader() {
+  const loader = document.createElement('div');
+  loader.classList.add('loader');
+  loader.innerHTML = `
+    <span class="loader__dot"></span>
+    <span class="loader__dot"></span>
+    <span class="loader__dot"></span>
+  `;
+  const chatMessage = dio.querySelector('.chatbox__messages');
+  chatMessage.appendChild(loader);
+}
 
-  onSendButton(dio) {
-    var textField = dio.querySelector('input');
-    let text1 = textField.value;
-    if (text1 === '') {
-      return;
-    }
-
-    let msg1 = { name: 'User', message: text1 };
-    this.messages.push(msg1);
-    this.updateChatText();
-    textField.value = '';
-
-    this.showLoader();
-
-    fetch('/chat', {
-      method: 'POST',
-      body: JSON.stringify({ message: text1 }),
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-    })
-      .then(r => r.json())
-      .then(r => {
-         let msg2 = { name: "dio", message:     r.message };
-         this.messages.push(msg2);
-         this.updateChatText();
-         textField.value = '';
-
-         this.removeLoader();
-      })
-       .catch((error) => {
-        console.error('Error:', error);
-        this.updateChatText();
-        textField.value = '';
-
-        this.removeLoader();
-      });
-    }
-
-  updateChatText() {
-    var html = '';
-    this.messages
-      .slice()
-      .reverse()
-      .forEach(function (item, index) {
-        if (item.name === 'dio') {
-          html +=
-            '<div class="messages__item messages__item--visitor">' +
-            item.message +
-            '</div>';
-        } else {
-          html +=
-            '<div class="messages__item messages__item--oprator">' +
-            item.message +
-            '</div>';
-        }
-      });
-
-    const dio = this.args.dio;
-    const chatmessage = dio.querySelector('.chatbox__messages');
-    chatmessage.innerHTML = html;
-  }
-
-  showLoader() {
-    const loader = document.createElement('div');
-    loader.classList.add('loader');
-    loader.innerHTML = `
-      <span class="loader__dot"></span>
-      <span class="loader__dot"></span>
-      <span class="loader__dot"></span>
-    `;
-    const chatmessage = this.args.dio.querySelector('.chatbox__messages');
-    chatmessage.appendChild(loader);
-  }
-
-  removeLoader() {
-    const loader = this.args.dio.querySelector('.loader');
-    if (loader) {
-      const chatmessage = this.args.dio.querySelector('.chatbox__messages');
-      chatmessage.removeChild(loader);
-    }
+function removeLoader() {
+  const loader = dio.querySelector('.loader');
+  if (loader) {
+    const chatMessage = dio.querySelector('.chatbox__messages');
+    chatMessage.removeChild(loader);
   }
 }
 
-const dio = new DioArafi();
-dio.display();    
-    
+openButton.addEventListener('click', toggleState);
+
+sendButton.addEventListener('click', onSendButton);
+
+const inputNode = dio.querySelector('input');
+inputNode.addEventListener('keyup', ({ key }) => {
+  if (key === 'Enter') {
+    onSendButton();
+  }
+});
